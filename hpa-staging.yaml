@@ -1,0 +1,45 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: livekit-agent-hpa-staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: livekit-agent-worker-staging
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 40
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        # Also scale up if memory usage gets high, which can happen with many concurrent sessions
+        # even if CPU is not maxed out.
+        averageUtilization: 40
+  behavior:
+    # Controls how quickly the autoscaler scales up.
+    scaleUp:
+      stabilizationWindowSeconds: 20 # Wait 20 seconds of high usage before scaling up.
+      policies:
+      # - type: Percent
+      #   value: 100
+      #   periodSeconds: 10
+      - type: Pods
+        value: 1
+        periodSeconds: 30
+      selectPolicy: Max
+    # Controls how quickly the autoscaler scales down, preventing rapid fluctuations.
+    scaleDown:
+      stabilizationWindowSeconds: 120 # Wait 2 minutes of low usage before scaling down.
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60 # Only remove 1 pod per minute at most.

@@ -1,0 +1,192 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit-agent-worker
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: livekit-agent-worker
+  template:
+    metadata:
+      labels:
+        app: livekit-agent-worker
+    spec:
+      # This gives pods 300 seconds to finish their work before being forcefully killed during a shutdown or update.
+      # This is critical for allowing agents to gracefully disconnect from sessions.
+      terminationGracePeriodSeconds: 300
+      containers:
+      - name: agent-container
+        image: us-central1-docker.pkg.dev/ghori-aya/ai-livekit-agents/livekit-agent-worker:latest
+        resources:
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+
+        env:
+        - name: REDIS_HOST
+          value: "redis-master" 
+        - name: REDIS_PORT
+          value: "6379"
+        - name: QUEUE_NAME
+          value: "qluworld_agent_jobs"
+        - name: LIVEKIT_URL
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys 
+              key: LIVEKIT_URL    
+        - name: LIVEKIT_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys 
+              key: LIVEKIT_API_KEY         
+        - name: LIVEKIT_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: LIVEKIT_API_SECRET
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: GOOGLE_API_KEY
+        - name: DEEPGRAM_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: DEEPGRAM_API_KEY
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: GROQ_API_KEY
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: CLIENT_ID
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: CLIENT_SECRET
+        - name: REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: REFRESH_TOKEN
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: DATABASE_URL
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: OPENROUTER_API_KEY
+        - name: PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: PG_USER
+        - name: PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: PG_PASSWORD
+        - name: PG_HOST
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: PG_HOST
+        - name: PG_PORT
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: PG_PORT
+        - name: PG_DBNAME
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: PG_DBNAME                  
+        - name: OPERATOR_URL
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: OPERATOR_URL  
+        - name: DEEPGRAM_API_KEY_2
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: DEEPGRAM_API_KEY_2
+        - name: DEEPGRAM_API_KEY_3
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: DEEPGRAM_API_KEY_3    
+        - name: OPENAI_API_KEY_2
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: OPENAI_API_KEY_2
+        - name: COWORKING_DB
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: COWORKING_DB
+        - name: COWORKING_USER
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: COWORKING_USER
+        - name: COWORKING_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: COWORKING_PASSWORD
+        - name: COWORKING_HOST
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: COWORKING_HOST                        
+        - name: RYAN_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: RYAN_OPENAI_API_KEY 
+        - name: ASSEMBLYAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: ASSEMBLYAI_API_KEY
+        - name: M2M_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: agent-api-keys
+              key: M2M_TOKEN
+                    
+        # Liveness probe: Restarts the container if it becomes unresponsive.
+        # This command checks if the main python process is still running.
+        # livenessProbe:
+        #   exec:
+        #     command:
+        #     - /bin/sh
+        #     - -c
+        #     - "ps -ef | grep '[p]ython main.py' > /dev/null"
+        #   initialDelaySeconds: 45
+        #   periodSeconds: 30
+
+        # # Readiness probe: Marks the pod as "ready" to accept work only when it's fully initialized.
+        # # This prevents work from being assigned to a pod that is still starting up.
+        # readinessProbe:
+        #   exec:
+        #     command:
+        #     - /bin/sh
+        #     - -c
+        #     - "ps -ef | grep '[p]ython main.py' > /dev/null"
+        #   initialDelaySeconds: 20
+        #   periodSeconds: 15

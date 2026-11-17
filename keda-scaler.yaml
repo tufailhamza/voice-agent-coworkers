@@ -1,0 +1,23 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: livekit-agent-scaler
+spec:
+  scaleTargetRef:
+    name: livekit-agent-worker  # The name of the deployment to scale
+  
+  # --- Scaling Parameters ---
+  pollingInterval: 5          # Check the queue every 5 seconds (default is 30)
+  cooldownPeriod:  60          # Wait 60s after the last job before scaling to 0
+  minReplicaCount: 1           # The goal: scale down to 1 pod to save cost and avoid cold start
+  maxReplicaCount: 50          # A safety limit for max concurrent agents
+
+  triggers:
+  - type: redis               # The type of scaler
+    metadata:
+      # The target value of 1 means "create 1 pod for every 1 item in the list"
+      listLength: "1"
+      # The address should be in the format "host:port"
+      address: "redis-master.default.svc.cluster.local:6379"
+      # The name of the Redis list (queue) to monitor
+      listName: "qluworld_agent_jobs"
